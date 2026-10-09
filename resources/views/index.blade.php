@@ -37,8 +37,8 @@
             <div class="hero-content">
                 <h1>[หัวข้อหลัก: วางแผนและคำนวณภาษีให้เป็นเรื่องง่าย]</h1>
                 <p>[คำอธิบายย่อ: เครื่องมือคำนวณภาษีเงินได้บุคคลธรรมดาออนไลน์ ถูกต้อง แม่นยำ]</p>
-                <div class="cta-actions">
-                    <a href="" class ="btn-primary">🚀 เริ่มคำนวณภาษีฟรี</a>
+                <div class="bta-actions">
+                    <a href="{{ route('tax.show') }}" class ="btn-primary">🚀 เริ่มคำนวณภาษีฟรี</a>
                 </div>
             </div>
             <div class="hero-image">

@@ -3,25 +3,40 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use app\Models\TaxRecord;
+use Illuminate\Support\Facades\Auth;
 
 class TaxController extends Controller
 {
+    public function showForm()
+    {
+        $taxRecord = null;
+
+        // ถ้าเป็น User ที่ล็อกอินแล้ว ให้ลองดึงข้อมูลปีล่าสุดจาก DB มาพรีโหลดใส่ฟอร์มล่วงหน้า
+        if (Auth::check()) {
+            $taxRecord = TaxRecord::where('user_id', Auth::id())
+                ->orxderBy('tax_year', 'desc')
+                ->first();
+        }
+
+        return view('calculate', compact('taxRecord'));
+    }
     public function calculateTax(Request $request){
         $request -> validate([
             'married-status' => 'required|string',
-            'child_count' => 'integer|min=0',
-            'income_g1' => 'numeric|min=0',
-            'income_g2' => 'numeric|min=0',
-            'income_g3' => 'numeric|min=0',
-            'income_g4' => 'numeric|min=0',
-            'income_g5' => 'numeric|min=0',
-            'income_g6' => 'numeric|min=0',
-            'income_g7' => 'numeric|min=0',
-            'income_g8' => 'numeric|min=0',
-            'deduct_social' => 'numeric|min=0',
-            'deduct_life' => 'numeric|min=0',
-            'deduct_health' => 'numeric|min=0',
-            'deduct_donation' => 'numeric|min=0',
+            'child_count' => 'integer|min:0',
+            'income_g1' => 'numeric|min:0',
+            'income_g2' => 'numeric|min:0',
+            'income_g3' => 'numeric|min:0',
+            'income_g4' => 'numeric|min:0',
+            'income_g5' => 'numeric|min:0',
+            'income_g6' => 'numeric|min:0',
+            'income_g7' => 'numeric|min:0',
+            'income_g8' => 'numeric|min:0',
+            'deduct_social' => 'numeric|min:0',
+            'deduct_life' => 'numeric|min:0',
+            'deduct_health' => 'numeric|min:0',
+            'deduct_donation' => 'numeric|min:0',
         ]);
 
 
@@ -136,7 +151,7 @@ class TaxController extends Controller
         // G. คำนวณภาษีที่ต้องจ่ายจากเงินได้สุทธิ (ตามตารางขั้นบันได)
         $taxPayable = $this->calculateStepTax($netIncome);
 
-        // // 3. ตรวจสอบ Action: ถ้ากดปุ่ม "save" และล็อกอินอยู่ ให้เซฟลง DB
+        // 3. ตรวจสอบ Action: ถ้ากดปุ่ม "save" และล็อกอินอยู่ ให้เซฟลง DB
         // $action = $request->input('action');
         // if ($action === 'save' && Auth::check()) {
         //     TaxRecord::updateOrCreate(
@@ -170,7 +185,7 @@ class TaxController extends Controller
         //     ]);
         // }
 
-        return view('calculator',compact('netIncome','taxPayable'));
+        return view('calculate',compact('netIncome','taxPayable'));
     }
 
     public function calculateStepTax(int $netIncome){
