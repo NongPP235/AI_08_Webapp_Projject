@@ -38,7 +38,7 @@
                 @csrf
 
                 <div class="form-group" style="margin-bottom: 15px;">
-                    <label自动 for="email" style="display: block; margin-bottom: 5px;">อีเมล (Email):</label>
+                    <label for="email" style="display: block; margin-bottom: 5px;">อีเมล (Email):</label>
                     <input type="email" name="email" id="email" value="{{ old('email') }}" required autofocus style="width: 100%; padding: 8px; box-sizing: border-box;">
                 </div>
 

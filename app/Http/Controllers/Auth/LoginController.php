@@ -5,23 +5,18 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class LoginController extends Controller
 {
-    // กำหนดเส้นทางหลังจากล็อกอินสำเร็จ (ให้กระโดดไปหน้าคำนวณภาษี)
     protected $redirectTo = '/tax-calculate';
 
-    /**
-     * 1. ฟังก์ชันแสดงหน้าฟอร์ม Login
-     */
     public function showLoginForm()
     {
-        return view('auth.login'); // ดึงไฟล์ resources/views/auth/login.blade.php
+        return view('auth.login'); 
     }
 
-    /**
-     * 2. ฟังก์ชันประมวลผลการ Login
-     */
     public function login(Request $request)
     {
         // ตรวจสอบความถูกต้องของข้อมูลที่ส่งมา
@@ -34,11 +29,25 @@ class LoginController extends Controller
             'password.required' => 'กรุณากรอกรหัสผ่าน',
         ]);
 
+        // สร้างคีย์สำหรับนับจำนวนครั้งที่ลอง (แยกตามอีเมล + IP ของผู้ใช้)
+        $throttleKey = Str::lower($request->email) . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()->withErrors([
+                'email' => 'คุณลองเข้าสู่ระบบผิดหลายครั้งเกินไป กรุณารออีก ' . $seconds . ' วินาทีแล้วลองใหม่',
+            ])->withInput($request->only('email'));
+        }
+
         // จำค่า Remember Me (ถ้าผู้ใช้กดติ๊กถูกมา)
         $remember = $request->has('remember');
 
         // พยายามตรวจสอบรหัสผ่านและล็อกอินเข้าสู่ระบบ
         if (Auth::attempt($credentials, $remember)) {
+            // ล็อกอินสำเร็จ ล้างตัวนับที่ลองผิดไว้
+            RateLimiter::clear($throttleKey);
+
             // สร้าง Session ID ใหม่เพื่อความปลอดภัย
             $request->session()->regenerate();
 
@@ -50,15 +59,15 @@ class LoginController extends Controller
             return redirect()->intended($this->redirectTo);
         }
 
-        // กรณีล็อกอินไม่สำเร็จ ให้ส่งข้อความแจ้งเตือนกลับไปที่หน้าเดิม
+        // ล็อกอินไม่สำเร็จ นับเพิ่ม 1 ครั้ง (ตัวนับหมดอายุใน 60 วินาที)
+        RateLimiter::hit($throttleKey, 60);
+
+        // ส่งข้อความแจ้งเตือนกลับไปที่หน้าเดิม
         return back()->withErrors([
             'email' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง',
         ])->withInput($request->only('email'));
     }
 
-    /**
-     * 3. ฟังก์ชันออกจากระบบ (Logout)
-     */
     public function logout(Request $request)
     {
         Auth::logout();
